@@ -55,6 +55,11 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
 		//清空总记录数条件
 		dc.setProjection(null);
 		System.out.println("修改开发代码");
+		System.out.println("修改开发代码");
+		System.out.println("修改开发代码");
+		System.out.println("修改开发代码");
+		System.out.println("修改开发代码");
+		System.out.println("修改开发代码");
 		return list.get(0).intValue();
 	}
 
