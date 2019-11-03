@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+	"-//Apache Software Foundation//DTD Struts Configuration 2.3//EN"
+	"http://struts.apache.org/dtds/struts-2.3.dtd">
+<struts>
+	<!-- 整合方式1:struts2创建Action对象,spring负责组装依赖属性 -->
+	<!-- 指定struts2的对象工厂为spring -->
+	<constant name="struts.objectFactory" value="spring"></constant>
+	
+	<package name="crm" namespace="/" extends="struts-default" >
+		<action name="UserAction_*" class="cn.itcast.web.action.UserAction" 
+																method="{1}" >
+			<result name="success" >/hello.jsp</result>
+		</action>
+	</package>
+</struts>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd ">
+
+
+	<!-- 开启注解注册对象开关 -->
+	<context:component-scan base-package="cn.itcast"></context:component-scan>
+	<!-- 开启注解配置AOP开关 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	<!-- 指定读取db.properties中的键值对 -->
+	<context:property-placeholder location="classpath:db.properties" />
+	<!-- c3p0连接池 -->
+	<bean name="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" >
+		<property name="jdbcUrl" value="${jdbc.jdbcUrl}" ></property>
+		<property name="driverClass" value="${jdbc.driverClass}" ></property>
+		<property name="user" value="${jdbc.user}" ></property>
+		<property name="password" value="${jdbc.password}" ></property>
+	</bean>
+
+	<!-- 配置sessionFactory -->
+	<!-- 使用原生hibernate.cfg.xml加载配置 
+	<bean name="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean" >
+		<property name="configLocation" value="classpath:hibernate.cfg.xml" ></property>
+	</bean>-->
+	<!-- 将hibernate中的配置转移到spring配置中 -->
+	<bean name="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean" >
+		<!-- 将连接池注入到SessionFactory中 -->
+		<property name="dataSource" ref="dataSource" ></property>
+		<!-- 指定可选|必选属性 -->
+		<property name="hibernateProperties">
+			<props>
+				<!-- 必选配置 -->
+				<!-- <prop key="hibernate.connection.driver_class">com.mysql.jdbc.Driver</prop>
+				<prop key="hibernate.connection.url">jdbc:mysql:///crm_sz4</prop>
+				<prop key="hibernate.connection.username">root</prop>
+				<prop key="hibernate.connection.password">1234</prop> -->
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<!-- 可选配置 -->
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop>
+			</props>
+		</property>
+		<!-- 引入映射文件 -->
+		<property name="mappingDirectoryLocations" value="classpath:cn/itcast/domain" ></property>
+		<!-- 开启扫描实体中的注解 
+				指定扫描cn.itcast.domain包中的实体类上的注解
+		-->
+		<property name="packagesToScan" value="cn.itcast.domain" ></property>
+	</bean>
+	<!-- 配置hibernate模板 -->
+	<bean name="hibernateTemplate" class="org.springframework.orm.hibernate5.HibernateTemplate" >
+		<property name="sessionFactory" ref="sessionFactory" ></property>
+	</bean>
+	<!-- 配置核心事务管理器 -->
+	<bean name="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager" >
+		<property name="sessionFactory" ref="sessionFactory" ></property>
+	</bean>
+	
+	<!-- 开启注解管理事务"开关" 
+	<tx:annotation-driven transaction-manager="transactionManager" />-->
+	
+	<!-- 事务通知 -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager" >
+		<tx:attributes>
+				<tx:method name="save*" propagation="REQUIRED" read-only="false" isolation="REPEATABLE_READ" />
+				<tx:method name="delete*" propagation="REQUIRED" read-only="false" isolation="REPEATABLE_READ" />
+				<tx:method name="update*" propagation="REQUIRED" read-only="false" isolation="REPEATABLE_READ" />
+				<tx:method name="find*" propagation="REQUIRED" read-only="true" isolation="REPEATABLE_READ" />
+				<tx:method name="*" propagation="REQUIRED" read-only="false" isolation="REPEATABLE_READ" />
+		</tx:attributes>
+	</tx:advice>
+	<!-- 配置事务切面 -->
+	<aop:config>
+		<aop:pointcut expression="execution(* cn.itcast.service.impl.*ServiceImpl.*(..))" id="txPC"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPC" />
+	</aop:config>
+	<!-- 配置Dao -->
+	<bean name="customerDao" class="cn.itcast.dao.impl.CustomerDaoImpl" >
+		<property name="ht" ref="hibernateTemplate" ></property>
+	</bean>
+	<bean name="linkManDao" class="cn.itcast.dao.impl.LinkManDaoImpl" >
+		<property name="ht" ref="hibernateTemplate" ></property>
+	</bean>
+	<bean name="baseDictDao" class="cn.itcast.dao.impl.BaseDictDaoImpl" >
+		<property name="ht" ref="hibernateTemplate" ></property>
+	</bean>
+	<bean name="saleVisitDao" class="cn.itcast.dao.impl.SaleVisitDaoImpl" >
+		<property name="ht" ref="hibernateTemplate" ></property>
+	</bean>
+	<!-- 配置Service -->
+	<bean name="customerService" class="cn.itcast.service.impl.CustomerServiceImpl" >
+		<property name="cd" ref="customerDao" ></property>
+	</bean>
+	<bean name="baseDictService" class="cn.itcast.service.impl.BaseDictServiceImpl" >
+		<property name="bdd" ref="baseDictDao" ></property>
+	</bean>
+	<bean name="linkManService" class="cn.itcast.service.impl.LinkManServiceImpl" >
+		<property name="lmd" ref="linkManDao" ></property>
+	</bean>
+	<bean name="saleVisitService" class="cn.itcast.service.impl.SaleVisitServiceImpl" >
+		<property name="svd" ref="saleVisitDao" ></property>
+	</bean>
+	<!-- 配置Action
+		****注意:Action配置中一定指定scope属性为prototype.确保每次请求获得的都是新的action对象
+	 -->
+	<bean name="customerAction" class="cn.itcast.web.action.CustomerAction" scope="prototype" >
+		<property name="cs" ref="customerService" ></property>
+	</bean>
+	<bean name="baseDictAction" class="cn.itcast.web.action.BaseDictAction" scope="prototype" >
+		<property name="bds" ref="baseDictService" ></property>
+	</bean>
+	<bean name="linkManAction" class="cn.itcast.web.action.LinkManAction" scope="prototype" >
+		<property name="lms" ref="linkManService" ></property>
+	</bean>
+	<bean name="saleVisitAction" class="cn.itcast.web.action.SaleVisitAction" scope="prototype" >
+		<property name="svs" ref="saleVisitService" ></property>
+	</bean>
+</beans>
