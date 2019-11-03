@@ -1,16 +1,14 @@
 package cn.itcast.dao.impl;
 
-import java.io.Serializable;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.List;
-
+import cn.itcast.dao.BaseDao;
 import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Projections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.HibernateTemplate;
 
-import cn.itcast.dao.BaseDao;
+import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
+import java.util.List;
 
 public class BaseDaoImpl<T> implements BaseDao<T> {
 	
@@ -56,6 +54,7 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
 		List<Long> list = (List<Long>) ht.findByCriteria(dc);
 		//清空总记录数条件
 		dc.setProjection(null);
+		System.out.println("修改开发代码");
 		return list.get(0).intValue();
 	}
 
